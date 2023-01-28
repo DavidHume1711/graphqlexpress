@@ -1,0 +1,38 @@
+
+#Trae las quotes de la API y llena el arreglo
+query {
+  breakingquotes{
+    quote
+    author
+  }
+}
+#Query para mostrar el arreglo cuando se necesite
+query {
+  show{
+    quote
+    author
+  }
+}
+#Mutación para añadir quote y autor
+mutation {
+  addQuote(quote: "Hola soy Felipe amigo de Walter", author: "Felipe Guerra") {
+    quote
+    author
+  }
+}
+
+#Mutación para borrar la primer quote que encuentre con ese nombre
+mutation {
+  deleteQuote(author: "Jesse Pinkman") {
+    quote
+    author
+  }
+}
+#Mutación para actualizar la primer quote que encuentre con ese nombre
+mutation {
+  updateQuote(author: "Walter White", quote: "Hola soy amigo de Felipe") {
+    quote
+    author
+  }
+}
+

@@ -1,66 +1,72 @@
-const { ApolloServer, gql } = require("apollo-server");
-
+const { ApolloServer, gql } = require('apollo-server');
+const fetch = require('node-fetch');
 
 const typeDefs = gql`
-  type Book {
-    id: String  
-    title: String
+  type Quote {
+    quote: String
     author: String
   }
-
   type Query {
-    Getbooks: [Book],
-    Getbook(id:String!):[Book]
+    breakingquotes: [Quote]
+    show: [Quote]
   }
   type Mutation {
-      CreateBook(id: String!,title: String!, author: String!): Book
-      DeleteBook(id: String!): Book
-      UpdateBook(id: String!,title: String!, author: String!): Book 
+    addQuote(quote: String, author: String): Quote
+    deleteQuote(author: String): Quote
+    updateQuote(author: String, quote: String): Quote
   }
 `;
 
-let books = [
-    {
-      id:"1",
-      title: 'The Awakening',
-      author: 'Kate Chopin',
+let breakingquotes = [];
+
+const resolvers = {
+  Query: {
+    breakingquotes: async () => {
+      const response = await fetch(
+        'https://api.breakingbadquotes.xyz/v1/quotes/10'
+      );
+      const data = await response.json();
+      breakingquotes = data;
+      return data;
     },
-    {
-      id:"2",  
-      title: 'City of Glass',
-      author: 'Paul Auster',
+    show: () => breakingquotes,
+  },
+  Mutation: {
+    addQuote: (parent, args) => {
+      const newQuote = {
+        quote: args.quote,
+        author: args.author,
+      };
+      breakingquotes.push(newQuote);
+      return newQuote;
     },
-    {
-       id:"3",  
-       title: 'Del amor y otros demonios',
-       author: 'Gabriel garcia Marquez',
-    }
-  ];
-  const resolvers = {
-    Mutation: {
-        CreateBook: (_,arg) => {books.push(arg); return arg},
-        DeleteBook: (_,arg) => { 
-                                 let finalbooks=books.filter(book => book.id != arg.id);
-                                 let bookdeleted = books.find(book => book.id == arg.id );   
-                                 books = [...finalbooks]; 
-                                 return bookdeleted
-                                },
-        UpdateBook:(_,arg) => {  let objIdx = books.findIndex(book => book.id == arg.id);
-                                 books[objIdx] = arg
-                                 return arg   
-             
-                              }                        
-
-    },  
-    Query: {
-      Getbooks: () => books,
-      Getbook: (_,arg) => books.find(number => number.id==arg.id)
+    deleteQuote: (parent, args) => {
+      const quoteIndex = breakingquotes.findIndex(
+        (quote) => quote.author == args.author
+      );
+      const deletedQuote = breakingquotes[quoteIndex];
+      breakingquotes.splice(quoteIndex, 1);
+      return deletedQuote;
     },
-  };
+    updateQuote: (parent, args) => {
+      const quoteIndex = breakingquotes.findIndex(
+        (quote) => quote.author == args.author
+      );
+      const oldQuote = breakingquotes[quoteIndex];
+      const updatedQuote = {
+        ...oldQuote,
+        quote: args.quote,
+      };
+      breakingquotes[quoteIndex] = updatedQuote;
+      return updatedQuote;
+    },
+  },
+};
 
-
-const server = new ApolloServer({ typeDefs, resolvers });
-
-server.listen().then(({ url }) => {
-  console.log(`🚀  Server ready at ${url}`);
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+});
+server.listen({ port: 3000, host: 'localhost' }).then(({ url }) => {
+  console.log(`Server ready at ${url}`);
 });
